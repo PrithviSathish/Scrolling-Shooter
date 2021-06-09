@@ -3,7 +3,6 @@ from pygame import mixer
 import random
 import os
 import csv
-import button
 
 # from Player import Soldier
 
@@ -50,6 +49,8 @@ grenade_fx.set_volume(0.5)
 
 # Load images
 # ------------------------------------------------------------------------
+heading_img = pygame.image.load("Assets/img/menu_text.png").convert_alpha()
+heading_img = pygame.transform.scale(heading_img, (_screen_width - 30, 70))
 start_img = pygame.image.load("Assets/img/start_btn.png").convert_alpha()
 restart_img = pygame.image.load("Assets/img/restart_btn.png").convert_alpha()
 exit_img = pygame.image.load("Assets/img/exit_btn.png").convert_alpha()
@@ -58,6 +59,9 @@ _pine1_img = pygame.image.load('Assets/img/background/pine1.png').convert_alpha(
 _pine2_img = pygame.image.load('Assets/img/background/pine2.png').convert_alpha()
 _mountain_img = pygame.image.load('Assets/img/background/mountain.png').convert_alpha()
 _sky_img = pygame.image.load('Assets/img/background/sky_cloud.png').convert_alpha()
+
+# Main Menu
+main_menu_img = pygame.transform.scale(pygame.image.load('Assets/img/main_menu.png'), (_screen_width, _screen_height))
 
 # Load tiles
 img_list = []
@@ -576,6 +580,36 @@ class Explosion(pygame.sprite.Sprite):
                 self.image = self.images[self.frame_index]
 
 
+class Button:
+    def __init__(self, x, y, image, scale):
+        width = image.get_width()
+        height = image.get_height()
+        self.image = pygame.transform.scale(image, (int(width * scale), int(height * scale)))
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
+        self.clicked = False
+
+    def draw(self, surface):
+        action = False
+
+        # get mouse position
+        pos = pygame.mouse.get_pos()
+
+        # check mouseover and clicked conditions
+        if self.rect.collidepoint(pos):
+            if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
+                action = True
+                self.clicked = True
+
+        if pygame.mouse.get_pressed()[0] == 0:
+            self.clicked = False
+
+        # draw button
+        surface.blit(self.image, (self.rect.x, self.rect.y))
+
+        return action
+
+
 class ScreenFade:
     def __init__(self, direction, colour, speed):
         self.direction = direction
@@ -641,9 +675,9 @@ intro_fade = ScreenFade(1, _black, 4)
 death_fade = ScreenFade(2, _pink, 4)
 
 # Main menu buttons -------------------------------------------------------
-start_btn = button.Button(_screen_width // 2 - 130, _screen_height // 2 - 150, start_img, 1)
-restart_btn = button.Button(_screen_width // 2 - 100, _screen_height // 2 - 50, restart_img, 2)
-exit_btn = button.Button(_screen_width // 2 - 110, _screen_height // 2 + 50, exit_img, 1)
+start_btn = Button(_screen_width // 2 - 130, _screen_height // 2, start_img, 1)
+restart_btn = Button(_screen_width // 2 - 100, _screen_height // 2 - 50, restart_img, 2)
+exit_btn = Button(_screen_width // 2 - 110, _screen_height // 2 + 190, exit_img, 1)
 # -------------------------------------------------------------------------
 
 # sprite groups
@@ -680,7 +714,8 @@ while run:
 
     # ---------------------------------------------
     if not start_game:
-        screen.fill(_bg)
+        screen.blit(main_menu_img, (0, 0))
+        screen.blit(heading_img, (20, _screen_height // 4))
         if start_btn.draw(screen):
             start_game = True
             start_intro = True
