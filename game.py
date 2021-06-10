@@ -32,20 +32,14 @@ screen_scroll = 0
 bg_scroll = 0
 _tile_size = _screen_height // _rows
 _tile_types = 21
+mute = False
+fx_mute = False
+sound_controlled = False
+music_controlled = False
 
 # Load audio
 pygame.mixer.music.load("Assets/audio/music2.mp3")
 pygame.mixer.music.set_volume(0.3)
-pygame.mixer.music.play(-1, 0.0)
-
-jump_fx = pygame.mixer.Sound('Assets/audio/jump.wav')
-jump_fx.set_volume(0.5)
-
-shot_fx = pygame.mixer.Sound('Assets/audio/shot.wav')
-shot_fx.set_volume(0.5)
-
-grenade_fx = pygame.mixer.Sound('Assets/audio/grenade.wav')
-grenade_fx.set_volume(0.5)
 
 # Load images
 # ------------------------------------------------------------------------
@@ -62,6 +56,12 @@ _sky_img = pygame.image.load('Assets/img/background/sky_cloud.png').convert_alph
 
 # Main Menu
 main_menu_img = pygame.transform.scale(pygame.image.load('Assets/img/main_menu.png'), (_screen_width, _screen_height))
+
+# Load sound and music images
+sound_img = pygame.image.load('Assets/img/misc/sound.png').convert_alpha()
+no_sound_img = pygame.image.load('Assets/img/misc/no_sound.png').convert_alpha()
+music_img = pygame.image.load('Assets/img/misc/music.png').convert_alpha()
+no_music_img = pygame.image.load('Assets/img/misc/no_music.png').convert_alpha()
 
 # Load tiles
 img_list = []
@@ -247,7 +247,8 @@ class Soldier(pygame.sprite.Sprite):
                             self.direction)
             bullet_group.add(bullet)
             self.ammo -= 1
-            shot_fx.play()
+            if not fx_mute:
+                shot_fx.play()
 
     def ai(self):
         if self.alive and player.alive:
@@ -537,7 +538,8 @@ class Grenade(pygame.sprite.Sprite):
         self.timer -= 1
         if self.timer <= 0:
             self.kill()
-            grenade_fx.play()
+            if not fx_mute:
+                grenade_fx.play()
             explosion = Explosion(self.rect.x, self.rect.y, 1.5)
             explosion_group.add(explosion)
 
@@ -670,6 +672,25 @@ def reset_level():
     return data
 
 
+def sound_controller(name):
+    if name == "sound":
+        if not mute:
+            sound_btn = Button(_screen_width - 202, 3, no_sound_img, 1)
+            muting = True
+        else:
+            sound_btn = Button(_screen_width - 200, 10, sound_img, 1)
+            muting = False
+        return sound_btn, muting
+    if name == "music":
+        if not fx_mute:
+            music_btn = Button(_screen_width - 100, 10, no_music_img, 0.65)
+            fx_muting = True
+        else:
+            music_btn = Button(_screen_width - 100, 10, music_img, 0.65)
+            fx_muting = False
+        return music_btn, fx_muting
+
+
 # Screen Fade
 intro_fade = ScreenFade(1, _black, 4)
 death_fade = ScreenFade(2, _pink, 4)
@@ -679,6 +700,24 @@ start_btn = Button(_screen_width // 2 - 130, _screen_height // 2, start_img, 1)
 restart_btn = Button(_screen_width // 2 - 100, _screen_height // 2 - 50, restart_img, 2)
 exit_btn = Button(_screen_width // 2 - 110, _screen_height // 2 + 190, exit_img, 1)
 # -------------------------------------------------------------------------
+
+# Sound and Music buttons
+music_btn = Button(_screen_width - 100, 10, music_img, 0.65)
+sound_btn = Button(_screen_width - 200, 10, sound_img, 1)
+
+    
+# Playing sound
+pygame.mixer.music.play(-1, 0.0)
+
+jump_fx = pygame.mixer.Sound('Assets/audio/jump.wav')
+jump_fx.set_volume(0.5)
+
+shot_fx = pygame.mixer.Sound('Assets/audio/shot.wav')
+shot_fx.set_volume(0.5)
+
+grenade_fx = pygame.mixer.Sound('Assets/audio/grenade.wav')
+grenade_fx.set_volume(0.5)
+
 
 # sprite groups
 enemy_group = pygame.sprite.Group()
@@ -833,7 +872,8 @@ while run:
 
             if event.key == pygame.K_w and player.alive:
                 player.jump = True
-                jump_fx.play()
+                if not fx_mute:
+                    jump_fx.play()
 
             if event.key == pygame.K_SPACE:
                 shoot = True
@@ -858,6 +898,18 @@ while run:
             if event.key == pygame.K_g:
                 grenade = False
                 grenade_thrown = False
+
+    if music_btn.draw(screen):
+        music_btn, fx_mute = sound_controller('music')
+        # fx_mute = not fx_mute
+        
+    if sound_btn.draw(screen):
+        sound_btn, mute = sound_controller('sound')
+        # mute = not mute
+        if not mute:
+            pygame.mixer.music.unpause()
+        else:
+            pygame.mixer.music.pause()
 
     pygame.display.update()
 
